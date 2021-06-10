@@ -1,7 +1,7 @@
 BERT2Punc
 ==============================
 
-This project aims to use the BERT model to predict where to insert punctuations in sequences of text. Initially, the model will be based on the pretrained BERT model from the transformers repository created by Hugging Face. Similarly, the initial dataset will be english texts from Wikipedia loaded through the transformers repository. If time allows for it, we will also try to use a pretrained Nordic BERT model to predict punctuation in danish texts from Wikipedia.
+This project aims to use the BERT model to predict where to insert punctuations in sequences of text. Initially, the model will be based on the pretrained BERT model from the Transformers repository created by Hugging Face: https://github.com/huggingface/transformers. Similarly, the initial dataset will be english texts from Wikipedia loaded through the Transformers repository. If time allows for it, we will also try to use a pretrained Nordic BERT model from https://github.com/botxo/nordic_bert to predict punctuation in danish texts from Wikipedia.
 
 Project Organization
 ------------
