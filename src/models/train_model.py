@@ -4,11 +4,13 @@ Bert-Base-uncased: 12-layer, 768-hidden, 12-heads, 109M parameters.
 Trained on cased English text.
 '''
 
+import numpy as np
 from absl import flags, app
 from tqdm.auto import tqdm
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
+from torch.utils.data.sampler import SubsetRandomSampler
 import transformers
 import logging
 from datasets import load_metric, load_from_disk
@@ -25,12 +27,14 @@ flags.DEFINE_float('lr', 1e-2, '')
 flags.DEFINE_float('momentum', .9, '')
 #cased makes a difference between case and lowercase
 flags.DEFINE_integer('seq_length', 32, '')
-flags.DEFINE_integer('subset_data',1000,'For loading data')
+flags.DEFINE_boolean('all_data',False,'Set true if all data should be loaded')
+flags.DEFINE_integer('subset_data',1800,'For loading data')
+flags.DEFINE_float('val_split',0.2,'')
 
 from variables import PROJECT_PATH
 from src.models.model import BERT_Model
 
-#tokenized_datasets = PROJECT_PATH / 'data' / 'processed'
+#tokenized_datasets = PROJECT_PATH / 'src' / 'data' / 'processed'
 
 class TrainModel(object):
     def __init__(self):
@@ -46,7 +50,7 @@ class TrainModel(object):
         except OSError as e:
             model = model
             print('No preloaded model')
-            print(model)
+            #print(model)
 
         self.criterion = nn.NLLLoss()
         #Use GPU if we can to make training faster
@@ -61,46 +65,89 @@ class TrainModel(object):
     def load_data(self, custom = False):
         path = PROJECT_PATH / 'data' / 'processed'
         tokenized_datasets = load_from_disk(str(path))
-        if custom:
-            tokenized_datasets = tokenized_datasets.remove_columns(['text'])
-            tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
-            tokenized_datasets.set_format("torch")
+        #load data
+        batch_size = FLAGS.batch_size
+        validation_split = FLAGS.val_split
+        shuffle_dataset = True
+        random_seed = 42
+        dataset_size = len(tokenized_datasets["train"])
 
-        train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(FLAGS.subset_data))
-        eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(FLAGS.subset_data))
+        indices = list(range(dataset_size))
 
-        if custom:
-            train_dataset = DataLoader(train_dataset, shuffle=True, batch_size=FLAGS.batch_size)
-            eval_dataset = DataLoader(eval_dataset, batch_size=FLAGS.batch_size)
+        if not custom:
+            train_dataset, eval_dataset = random_split(
+                tokenized_datasets["train"],
+                [int(dataset_size * (validation_split)), dataset_size - int(dataset_size * (validation_split))],
+                generator=torch.Generator().manual_seed(42)
+            )
+            return train_dataset, eval_dataset
 
-        return train_dataset, eval_dataset
+        else:
+
+            dataset = tokenized_datasets["train"].shuffle(seed=random_seed).select(indices)
+
+            # Creating data indices for training and validation splits:
+
+            split = int(np.floor(validation_split * dataset_size))
+            np.random.seed(random_seed)
+            np.random.shuffle(indices)
+
+
+            train_indices, val_indices = indices[split:], indices[:split]
+
+            # Creating PT data samplers and loaders:
+            train_sampler = SubsetRandomSampler(train_indices)
+            valid_sampler = SubsetRandomSampler(val_indices)
+
+            train_dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
+                                                       sampler=train_sampler)
+            eval_dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
+                                                        sampler=valid_sampler)
+        #features: ['attention_mask', 'input_ids', 'text', 'title', 'token_type_ids']
+        #print(next(iter(train_dataloader))['title'])
+            return train_dataloader, eval_dataloader
 
 
     def train_simpel(self):
-        train_dataset, eval_dataset = self.load_data(custom = False)
+        print('Loading dataset')
+        train_dataloader, eval_dataloader = self.load_data()
 
         training_args = transformers.TrainingArguments(
-            do_train=True,
+            output_dir="output",
+            evaluation_strategy="steps",
+            eval_steps=500,
+            per_device_train_batch_size=8,
+            per_device_eval_batch_size=8,
+            num_train_epochs=3,
+            save_steps=3000,
+            seed=0,
+            load_best_model_at_end=True,
+        )
+        '''
+         do_train=True,
             num_train_epochs = FLAGS.epochs,
             learning_rate= FLAGS.lr,
-            no_cuda=not torch.cuda.is_available(),
-            load_best_model_at_end=True,
-            logging_dir=logger
-        )
+            logging_dir=logger,
+            output_dir= 'output',
+            load_best_model_at_end=True
+            '''
 
+
+        #TypeError: _forward_unimplemented() got an unexpected keyword argument 'attention_mask'
         trainer = transformers.Trainer(
             model=self.model,
             args=training_args,
-            train_dataset=train_dataset,
-            eval_dataset=eval_dataset
+            train_dataset=train_dataloader,
+            eval_dataset=eval_dataloader
         )
         #finetune model
         trainer.train()
 
+
         accuracy = load_metric('accuracy')
 
     def train_custom(self):
-        train_dataloader, eval_dataloader = self.load_data(custom=True)
+        train_dataloader, eval_dataloader = self.load_data(custom = True)
         model = self.model
         optimizer = self.optimizer
 
@@ -152,7 +199,7 @@ class TrainModel(object):
 def main(argv):
     # TrainOREvaluate().train()
     # writer.close()
-    TrainModel().train_simpel()
+    TrainModel().train_custom()
 
 if __name__ == '__main__':
     app.run(main)
