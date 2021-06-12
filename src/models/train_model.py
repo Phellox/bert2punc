@@ -4,11 +4,12 @@ Bert-Base-uncased: 12-layer, 768-hidden, 12-heads, 109M parameters.
 Trained on cased English text.
 '''
 
+from torch.cuda.random import manual_seed
 from absl import flags, app
 from tqdm.auto import tqdm
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 import transformers
 import logging
 from datasets import load_metric, load_from_disk
@@ -26,6 +27,7 @@ flags.DEFINE_float('momentum', .9, '')
 #cased makes a difference between case and lowercase
 flags.DEFINE_integer('seq_length', 32, '')
 flags.DEFINE_integer('subset_data',1000,'For loading data')
+flags.DEFINE_float('test_split', 0.2,'')
 
 from variables import PROJECT_PATH
 from src.models.model import BERT_Model
@@ -66,8 +68,13 @@ class TrainModel(object):
             tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
             tokenized_datasets.set_format("torch")
 
-        train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(FLAGS.subset_data))
-        eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(FLAGS.subset_data))
+        #train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(FLAGS.subset_data))
+        data_length=len(tokenized_datasets["train"])
+        train_dataset, eval_dataset= random_split(
+            tokenized_datasets["train"],
+             [data_length-int(data_length*(FLAGS.test_split)), int(data_length*(FLAGS.test_split))],
+             generator=torch.Generator().manual_seed(42)
+             )
 
         if custom:
             train_dataset = DataLoader(train_dataset, shuffle=True, batch_size=FLAGS.batch_size)
