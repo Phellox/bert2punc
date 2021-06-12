@@ -2,13 +2,13 @@ from variables import PROJECT_PATH
 import datasets
 from transformers import AutoTokenizer
 
-def download_data(path=PROJECT_PATH / 'data' / 'raw'):
+def download_data(path=str(PROJECT_PATH / 'data' / 'raw')):
     data = datasets.load_dataset('wikipedia', '20200501.en')
-    data.save_to_disk(str(path))
+    data.save_to_disk(path)
     return data
 
-def load_data(path=PROJECT_PATH / 'data' / 'raw'):
-    return datasets.load_from_disk(str(path))
+def load_data(path=str(PROJECT_PATH / 'data' / 'raw')):
+    return datasets.load_from_disk(path)
 
 def tokenize_function(datapoint):
     return tokenizer(datapoint["text"], padding="max_length", truncation=True)

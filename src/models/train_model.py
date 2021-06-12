@@ -11,7 +11,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 import transformers
 import logging
-from datasets import load_metric
+from datasets import load_metric, load_from_disk
 logging.basicConfig(level=logging.INFO)
 logger = logging
 
@@ -59,7 +59,8 @@ class TrainModel(object):
 
 
     def load_data(self, custom = False):
-        tokenized_datasets = PROJECT_PATH / 'data' / 'processed'
+        path = PROJECT_PATH / 'data' / 'processed'
+        tokenized_datasets = load_from_disk(str(path))
         if custom:
             tokenized_datasets = tokenized_datasets.remove_columns(['text'])
             tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
