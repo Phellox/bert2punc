@@ -1,12 +1,14 @@
-import transformers
 import torch
-from torch import nn
+import transformers
 from absl import flags
+from torch import nn
 
 
 class BERT_Model(nn.Module):
-    def __init__(self, modeltype = 'bert-base-cased'):
+    def __init__(self, modeltype="bert-base-cased"):
         super().__init__()
         self.model = transformers.BertModel.from_pretrained(modeltype)
-        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.device = (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
         self.model = self.model.to(self.device)

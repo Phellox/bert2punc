@@ -1,103 +1,113 @@
-''''
+"""'
 Finetune the pre-trained model
 Bert-Base-uncased: 12-layer, 768-hidden, 12-heads, 109M parameters.
 Trained on cased English text.
-'''
+"""
 
-from absl import flags, app
-from tqdm.auto import tqdm
+import logging
+
 import torch
+import transformers
+from absl import app, flags
+from datasets import load_from_disk, load_metric
 from torch import nn
 from torch.utils.data import DataLoader
-import transformers
-import logging
-from datasets import load_metric, load_from_disk
+from tqdm.auto import tqdm
+
 logging.basicConfig(level=logging.INFO)
 logger = logging
 
 FLAGS = flags.FLAGS
 
 # Hyper parameters
-flags.DEFINE_string('model_type', 'bert-base-cased', 'Pretrained model')
-flags.DEFINE_integer('epochs', 2, '')
-flags.DEFINE_integer('batch_size', 8, '')
-flags.DEFINE_float('lr', 1e-2, '')
-flags.DEFINE_float('momentum', .9, '')
-#cased makes a difference between case and lowercase
-flags.DEFINE_integer('seq_length', 32, '')
-flags.DEFINE_integer('subset_data',1000,'For loading data')
+flags.DEFINE_string("model_type", "bert-base-cased", "Pretrained model")
+flags.DEFINE_integer("epochs", 2, "")
+flags.DEFINE_integer("batch_size", 8, "")
+flags.DEFINE_float("lr", 1e-2, "")
+flags.DEFINE_float("momentum", 0.9, "")
+# cased makes a difference between case and lowercase
+flags.DEFINE_integer("seq_length", 32, "")
+flags.DEFINE_integer("subset_data", 1000, "For loading data")
 
-from variables import PROJECT_PATH
 from src.models.model import BERT_Model
+from variables import PROJECT_PATH
 
-#tokenized_datasets = PROJECT_PATH / 'data' / 'processed'
+# tokenized_datasets = PROJECT_PATH / 'data' / 'processed'
+
 
 class TrainModel(object):
     def __init__(self):
         super().__init__()
-        print('Model type ',FLAGS.model_type)
+        print("Model type ", FLAGS.model_type)
         model = BERT_Model(modeltype=FLAGS.model_type)
-        self.path = '../trained_model.pt'
+        self.path = "../trained_model.pt"
         try:
             checkpoint = torch.load(self.path)
             model = model.load_state_dict(checkpoint)
-            #print(model)
-            #print(checkpoint)
+            # print(model)
+            # print(checkpoint)
         except OSError as e:
             model = model
-            print('No preloaded model')
+            print("No preloaded model")
             print(model)
 
         self.criterion = nn.NLLLoss()
-        #Use GPU if we can to make training faster
-        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        print('Initialize optimizer')
-        self.optimizer = transformers.AdamW(params=model.parameters(),
-                                            lr = FLAGS.lr)
+        # Use GPU if we can to make training faster
+        self.device = (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
+        print("Initialize optimizer")
+        self.optimizer = transformers.AdamW(params=model.parameters(), lr=FLAGS.lr)
 
         self.model = model
 
-
-    def load_data(self, custom = False):
-        path = PROJECT_PATH / 'data' / 'processed'
+    def load_data(self, custom=False):
+        path = PROJECT_PATH / "data" / "processed"
         tokenized_datasets = load_from_disk(str(path))
         if custom:
-            tokenized_datasets = tokenized_datasets.remove_columns(['text'])
+            tokenized_datasets = tokenized_datasets.remove_columns(["text"])
             tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
             tokenized_datasets.set_format("torch")
 
-        train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(FLAGS.subset_data))
-        eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(FLAGS.subset_data))
+        train_dataset = (
+            tokenized_datasets["train"]
+            .shuffle(seed=42)
+            .select(range(FLAGS.subset_data))
+        )
+        eval_dataset = (
+            tokenized_datasets["test"].shuffle(seed=42).select(range(FLAGS.subset_data))
+        )
 
         if custom:
-            train_dataset = DataLoader(train_dataset, shuffle=True, batch_size=FLAGS.batch_size)
+            train_dataset = DataLoader(
+                train_dataset, shuffle=True, batch_size=FLAGS.batch_size
+            )
             eval_dataset = DataLoader(eval_dataset, batch_size=FLAGS.batch_size)
 
         return train_dataset, eval_dataset
 
-
     def train_simpel(self):
-        train_dataset, eval_dataset = self.load_data(custom = False)
+        train_dataset, eval_dataset = self.load_data(custom=False)
 
         training_args = transformers.TrainingArguments(
             do_train=True,
-            num_train_epochs = FLAGS.epochs,
-            learning_rate= FLAGS.lr,
+            num_train_epochs=FLAGS.epochs,
+            learning_rate=FLAGS.lr,
             no_cuda=not torch.cuda.is_available(),
             load_best_model_at_end=True,
-            logging_dir=logger
+            logging_dir=logger,
         )
 
         trainer = transformers.Trainer(
             model=self.model,
             args=training_args,
             train_dataset=train_dataset,
-            eval_dataset=eval_dataset
+            eval_dataset=eval_dataset,
         )
-        #finetune model
+        # finetune model
         trainer.train()
 
-        accuracy = load_metric('accuracy')
+        accuracy = load_metric("accuracy")
 
     def train_custom(self):
         train_dataloader, eval_dataloader = self.load_data(custom=True)
@@ -110,9 +120,9 @@ class TrainModel(object):
             "linear",
             optimizer=optimizer,
             num_warmup_steps=0,
-            num_training_steps=num_training_steps
+            num_training_steps=num_training_steps,
         )
-        #add a progress bar over our number of training steps
+        # add a progress bar over our number of training steps
         progress_bar = tqdm(range(num_training_steps))
 
         model.train()
@@ -128,7 +138,7 @@ class TrainModel(object):
                 optimizer.zero_grad()
                 progress_bar.update(1)
 
-        #evaluate
+        # evaluate
         metric = load_metric("accuracy")
         model.eval()
         for batch in eval_dataloader:
@@ -141,12 +151,12 @@ class TrainModel(object):
             metric.add_batch(predictions=predictions, references=batch["labels"])
         final_score = metric.compute()
 
-        '''
+        """
         #If model is better, save the trained model
         if  final_score['accuracy'] > best_accuracy:
             best_accuracy = final_score['accuracy']
             torch.save(model.state_dict(), self.path)
-        '''
+        """
 
 
 def main(argv):
@@ -154,11 +164,12 @@ def main(argv):
     # writer.close()
     TrainModel().train_simpel()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app.run(main)
 
 
-'''
+"""
 from transformers import pipeline, AutoTokenizer, BartForConditionalGeneration
 #load tokenizer to preprocess our data
 tokenizer = AutoTokenizer.from_pretrained(model_type)
@@ -184,4 +195,4 @@ trainer = Trainer(
 
 #fine-tune model; start training
 trainer.train()
-'''
+"""
