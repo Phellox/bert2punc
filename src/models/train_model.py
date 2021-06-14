@@ -1,4 +1,4 @@
-''''
+'''
 Finetune the pre-trained model
 Bert-Base-uncased: 12-layer, 768-hidden, 12-heads, 109M parameters.
 Trained on cased English text.
@@ -7,7 +7,9 @@ Trained on cased English text.
 import numpy as np
 from absl import flags, app
 from tqdm.auto import tqdm
+
 import torch
+import transformers
 from torch import nn
 from torch.utils.data import DataLoader, random_split
 from torch.utils.data.sampler import SubsetRandomSampler
@@ -50,14 +52,15 @@ class TrainModel(object):
         except OSError as e:
             model = model
             print('No preloaded model')
-            #print(model)
+            print(model)
 
         self.criterion = nn.NLLLoss()
-        #Use GPU if we can to make training faster
-        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        print('Initialize optimizer')
-        self.optimizer = transformers.AdamW(params=model.parameters(),
-                                            lr = FLAGS.lr)
+        # Use GPU if we can to make training faster
+        self.device = (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
+        print("Initialize optimizer")
+        self.optimizer = transformers.AdamW(params=model.parameters(), lr=FLAGS.lr)
 
         self.model = model
 
@@ -137,12 +140,11 @@ class TrainModel(object):
         trainer = transformers.Trainer(
             model=self.model,
             args=training_args,
-            train_dataset=train_dataloader,
-            eval_dataset=eval_dataloader
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset
         )
         #finetune model
         trainer.train()
-
 
         accuracy = load_metric('accuracy')
 
@@ -199,7 +201,7 @@ class TrainModel(object):
 def main(argv):
     # TrainOREvaluate().train()
     # writer.close()
-    TrainModel().train_custom()
+    TrainModel().train_simpel()
 
 if __name__ == '__main__':
     app.run(main)
