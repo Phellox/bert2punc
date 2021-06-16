@@ -1,3 +1,4 @@
+from variables import PROJECT_PATH
 import datasets
 from transformers import AutoTokenizer
 

@@ -68,7 +68,7 @@ class TrainModel(object):
         self.tokenizer = transformers.BertTokenizer.from_pretrained(FLAGS.model_type)
 
     def load_data(self, custom = False):
-        path = PROJECT_PATH / 'src' / 'data' / 'processed'
+        path = PROJECT_PATH / 'data' / 'processed'
         tokenized_datasets = load_from_disk(str(path))
         batch_size = FLAGS.batch_size
         validation_split = FLAGS.val_split
