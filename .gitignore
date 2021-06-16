@@ -92,3 +92,5 @@ target/
 *.tmp
 *.docx
 
+*.1
+*.0
