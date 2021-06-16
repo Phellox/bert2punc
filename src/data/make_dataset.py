@@ -2,9 +2,6 @@ from variables import PROJECT_PATH
 import datasets
 from transformers import BertTokenizer
 
-from variables import PROJECT_PATH
-
-
 def download_data(path=str(PROJECT_PATH / "data" / "raw")):
     data = datasets.load_dataset("wikipedia", "20200501.en")
     data.save_to_disk(path)
