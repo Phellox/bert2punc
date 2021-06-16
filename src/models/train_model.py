@@ -40,6 +40,7 @@ from src.models.model import BERT_Model
 
 #tokenized_datasets = PROJECT_PATH / 'src' / 'data' / 'processed'
 
+
 class TrainModel(object):
     def __init__(self):
         super().__init__()
