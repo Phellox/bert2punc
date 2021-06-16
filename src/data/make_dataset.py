@@ -1,6 +1,6 @@
 from variables import PROJECT_PATH
 import datasets
-from transformers import AutoTokenizer
+from transformers import BertTokenizer
 
 from variables import PROJECT_PATH
 
@@ -24,6 +24,7 @@ if __name__ == "__main__":
         data = load_data()
     except:
         data = download_data()
-    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+    
+    tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
     processed_data = data.map(tokenize_function, batched=True)
     processed_data.save_to_disk(str(PROJECT_PATH / "data" / "processed"))
