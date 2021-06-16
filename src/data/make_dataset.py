@@ -1,11 +1,9 @@
-import datasets
-from transformers import BertTokenizer
-import torch
-from torch.utils.data import TensorDataset, DataLoader
-import numpy as np
-import string
 
+import string
 from variables import PROJECT_PATH
+import datasets
+import torch
+from transformers import BertTokenizer
 
 
 def download_data(path=str(PROJECT_PATH / "data" / "raw")):
