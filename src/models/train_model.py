@@ -12,11 +12,14 @@ from tqdm.auto import tqdm
 import torch
 import transformers
 from torch import nn
-from torch.utils.data import DataLoader, random_split
-from torch.utils.data.sampler import SubsetRandomSampler
+from torch.utils.data import DataLoader, TensorDataset
 import transformers
 import logging
 from datasets import load_metric, load_from_disk
+
+from variables import PROJECT_PATH
+from src.models.model import BERT_Model
+
 logging.basicConfig(level=logging.INFO)
 logger = logging
 
@@ -24,19 +27,17 @@ FLAGS = flags.FLAGS
 
 # Hyper parameters
 #cased makes a difference between case and lowercase
-flags.DEFINE_string('model_type', 'bert-base-cased', 'Pretrained model')
-flags.DEFINE_integer('epochs', 2, '')
-flags.DEFINE_integer('batch_size', 8, '')
-flags.DEFINE_float('lr', 1e-2, '')
+flags.DEFINE_string('model_type', 'bert-base-uncased', 'Pretrained model')
+flags.DEFINE_integer('epochs', 1, '')
+flags.DEFINE_integer('batch_size', 32, '')
+flags.DEFINE_float('lr', 1e-3, '')
 flags.DEFINE_float('momentum', .9, '')
 flags.DEFINE_integer('seq_length', 32, '')
-flags.DEFINE_boolean('all_data',False,'Set true if all data should be loaded')
+flags.DEFINE_boolean('all_data', False, 'Set true if all data should be loaded')
 flags.DEFINE_integer('subset_data',1800,'For loading data')
 flags.DEFINE_float('val_split',0.2,'')
 flags.DEFINE_float('test_split', 0.2,'')
 
-from variables import PROJECT_PATH
-from src.models.model import BERT_Model
 
 #tokenized_datasets = PROJECT_PATH / 'src' / 'data' / 'processed'
 
@@ -44,81 +45,80 @@ from src.models.model import BERT_Model
 class TrainModel(object):
     def __init__(self):
         super().__init__()
-        print('Model type ',FLAGS.model_type)
-        model = BERT_Model(modeltype=FLAGS.model_type)
+        output_size = 4
+        segment_size = 32
+        dropout = 0.3
+
+        model = BERT_Model(segment_size, output_size, dropout)
         self.path = '../trained_model.pt'
         try:
             checkpoint = torch.load(self.path)
             model = model.load_state_dict(checkpoint)
-            #print(model)
-            #print(checkpoint)
         except OSError as e:
             model = model
             print('No preloaded model')
-            #print(model)
 
-        self.criterion = nn.NLLLoss()
+        self.criterion = nn.CrossEntropyLoss()
         # Use GPU if we can to make training faster
         self.device = (
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
+        self.model = model
+
         print("Initialize optimizer")
         self.optimizer = transformers.AdamW(params=model.parameters(), lr=FLAGS.lr)
 
-        self.model = model
-        self.tokenizer = transformers.BertTokenizer.from_pretrained(FLAGS.model_type)
-
-    def load_data(self, custom = False):
-        path = PROJECT_PATH / 'data' / 'processed'
-        tokenized_datasets = load_from_disk(str(path))
+    def load_data(self, path):
+        X, y = torch.load(path)
+        data = TensorDataset(X, y)
         batch_size = FLAGS.batch_size
-        validation_split = FLAGS.val_split
+        # validation_split = FLAGS.val_split
         shuffle_dataset = True
-        random_seed = 42
-        dataset_size = len(tokenized_datasets["train"])
+        return DataLoader(data, batch_size, shuffle_dataset)
 
-
-        if not custom:
-
-            train_dataset, eval_dataset = random_split(
-                tokenized_datasets["train"],
-                [int(dataset_size * (validation_split)), dataset_size - int(dataset_size * (validation_split))],
-                generator=torch.Generator().manual_seed(42)
-            )
-
-            return train_dataset, eval_dataset
-
-        else:
-            indices = list(range(dataset_size))
-            dataset = tokenized_datasets["train"].shuffle(seed=random_seed).select(indices)
-
-            # Creating data indices for training and validation splits:
-
-            split = int(np.floor(validation_split * dataset_size))
-            np.random.seed(random_seed)
-            np.random.shuffle(indices)
-
-
-            train_indices, val_indices = indices[split:], indices[:split]
-            return train_indices, val_indices
-            '''
-            # Creating PT data samplers and loaders:
-            train_sampler = SubsetRandomSampler(train_indices)
-            valid_sampler = SubsetRandomSampler(val_indices)
-
-            train_dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
-                                                       sampler=train_sampler)
-            eval_dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
-                                                        sampler=valid_sampler)
-        #features: ['attention_mask', 'input_ids', 'text', 'title', 'token_type_ids']
-        #print(next(iter(train_dataloader))['title'])
-            return train_dataloader, eval_dataloader
-            '''
-
+        #
+        # if not custom:
+        #
+        #     train_dataset, eval_dataset = random_split(
+        #         tokenized_datasets["train"],
+        #         [int(dataset_size * (validation_split)), dataset_size - int(dataset_size * (validation_split))],
+        #         generator=torch.Generator().manual_seed(42)
+        #     )
+        #
+        #     return train_dataset, eval_dataset
+        #
+        # else:
+        #     indices = list(range(dataset_size))
+        #     dataset = tokenized_datasets["train"].shuffle(seed=random_seed).select(indices)
+        #
+        #     # Creating data indices for training and validation splits:
+        #
+        #     split = int(np.floor(validation_split * dataset_size))
+        #     np.random.seed(random_seed)
+        #     np.random.shuffle(indices)
+        #
+        #
+        #     train_indices, val_indices = indices[split:], indices[:split]
+        #     return train_indices, val_indices
+        #     '''
+        #     # Creating PT data samplers and loaders:
+        #     train_sampler = SubsetRandomSampler(train_indices)
+        #     valid_sampler = SubsetRandomSampler(val_indices)
+        #
+        #     train_dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
+        #                                                sampler=train_sampler)
+        #     eval_dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
+        #                                                 sampler=valid_sampler)
+        # #features: ['attention_mask', 'input_ids', 'text', 'title', 'token_type_ids']
+        # #print(next(iter(train_dataloader))['title'])
+        #     return train_dataloader, eval_dataloader
+        #     '''
 
     def train_simpel(self):
         print('Loading dataset')
-        train_dataloader, eval_dataloader = self.load_data(custom= False)
+        train_dataloader = self.load_data(path=PROJECT_PATH / "data" / "processed" / "train.pt")
+        val_dataloader = self.load_data(path=PROJECT_PATH / "data" / "processed" / "val.pt")
+        test_dataloader = self.load_data(path=PROJECT_PATH / "data" / "processed" / "test.pt")
 
         training_args = transformers.TrainingArguments("test_trainer")
         '''
@@ -143,26 +143,27 @@ class TrainModel(object):
             load_best_model_at_end=True
             '''
 
-
-        #TypeError: _forward_unimplemented() got an unexpected keyword argument 'attention_mask'
         trainer = transformers.Trainer(
             model=self.model,
             args=training_args,
             train_dataset=train_dataloader,
-            eval_dataset=eval_dataloader
+            eval_dataset=val_dataloader
         )
-        #finetune model
+
+        # Finetune model
         trainer.train()
 
-        accuracy = load_metric('accuracy')
+        # accuracy = load_metric('accuracy')
 
     def train_custom(self):
-        train_dataloader, eval_dataloader = self.load_data(custom = True)
+        train_dataloader = self.load_data(path=PROJECT_PATH / "data" / "processed" / "train.pt")
+        val_dataloader = self.load_data(path=PROJECT_PATH / "data" / "processed" / "val.pt")
+        test_dataloader = self.load_data(path=PROJECT_PATH / "data" / "processed" / "test.pt")
         model = self.model
         optimizer = self.optimizer
 
         num_epochs = FLAGS.epochs
-        num_training_steps = num_epochs * len(train_dataloader)
+        num_training_steps = num_epochs * len(val_dataloader)
 
         lr_scheduler = transformers.get_scheduler(
             "linear",
@@ -176,28 +177,27 @@ class TrainModel(object):
 
         model.train()
         for epoch in range(num_epochs):
-            for batch in train_dataloader:
-                batch = {k: v for k, v in batch.items()}
-                outputs = model(**batch)
-                loss = outputs.loss
-                loss.backward()
+            for X, y in val_dataloader:
+                X = X
+                y = y
+                outputs = model(X)
+                loss = self.criterion(outputs, y)
 
+                optimizer.zero_grad()
+                loss.backward()
                 optimizer.step()
                 lr_scheduler.step()
-                optimizer.zero_grad()
                 progress_bar.update(1)
 
         #evaluate
         metric = load_metric("accuracy")
         model.eval()
-        for batch in eval_dataloader:
-            batch = {k: v for k, v in batch.items()}
+        for X, y in test_dataloader:
             with torch.no_grad():
-                outputs = model(**batch)
+                outputs = model(X)
 
-            logits = outputs.logits
-            predictions = torch.argmax(logits, dim=-1)
-            metric.add_batch(predictions=predictions, references=batch["labels"])
+            predictions = torch.argmax(outputs, dim=-1)
+            metric.add_batch(predictions=predictions, references=y)
         final_score = metric.compute()
         print('Final score: ', final_score)
 
@@ -212,8 +212,8 @@ class TrainModel(object):
 def main(argv):
     # TrainOREvaluate().train()
     # writer.close()
-    #TrainModel().train_custom()
-    TrainModel().train_simpel()
+    TrainModel().train_custom()
+    #TrainModel().train_simpel()
     #TrainModel().load_data()
 
 if __name__ == '__main__':

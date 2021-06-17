@@ -14,7 +14,7 @@ class BERT_Model(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        x = self.bert(x)
+        x = self.bert(x)["logits"]
         x = x.view(x.shape[0], -1)
         x = self.fc(self.dropout(self.bn(x)))
         return x

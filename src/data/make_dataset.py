@@ -26,7 +26,7 @@ def load_file(filename):
     return data
 
 
-def encode_data(data, tokenizer, punctuation_enc):
+def encode_data(data, tokenizer, punctuation_enc, segment_size):
     """
     Converts words to (BERT) tokens and punctuation to given encoding.
     Note that words can be composed of multiple tokens.
@@ -35,17 +35,18 @@ def encode_data(data, tokenizer, punctuation_enc):
     X = []
     Y = []
     for idx, split_text in enumerate(data):
-        X_tmp = []
-        for word, punc in split_text:
-            tokens = tokenizer.tokenize(word)
-            x = tokenizer.convert_tokens_to_ids(tokens)
-            y = [punctuation_enc[punc]]
-            if len(x) > 0:
-                if len(x) > 1:
-                    y = (len(x)-1)*[0] + y
-                X_tmp += x
-                Y += y
-        X.append(X_tmp)
+        if len(split_text) >= segment_size:
+            X_tmp = []
+            for word, punc in split_text:
+                tokens = tokenizer.tokenize(word)
+                x = tokenizer.convert_tokens_to_ids(tokens)
+                y = [punctuation_enc[punc]]
+                if len(x) > 0:
+                    if len(x) > 1:
+                        y = (len(x)-1)*[0] + y
+                    X_tmp += x
+                    Y += y
+            X.append(X_tmp)
 
     return X, torch.tensor(Y)
 
@@ -57,6 +58,7 @@ def insert_target(X, segment_size):
     """
     X_flattened = []
 
+    n = 0
     for x in X:
         x_pad = x[-((segment_size-1)//2-1):]+x+x[:segment_size//2]
 
@@ -64,6 +66,10 @@ def insert_target(X, segment_size):
             segment = x_pad[i:i+segment_size-1]
             segment.insert((segment_size-1)//2, 0)
             X_flattened.append(segment)
+
+        n += len(x)
+        if n != len(X_flattened):
+            print("ERROR: DIMENSION MISMATCH")
 
     return torch.tensor(X_flattened)
 
@@ -85,7 +91,7 @@ def reformat_data(data, include_punctuations=".,"):
 def preprocess_data(data, tokenizer, punctuation_enc, segment_size):
     include_punctuations = ("".join(punctuation_enc.keys())).replace(" ", "")
     data = reformat_data(data, include_punctuations)
-    X, Y = encode_data(data, tokenizer, punctuation_enc)
+    X, Y = encode_data(data, tokenizer, punctuation_enc, segment_size)
     X = insert_target(X, segment_size)
     return X, Y
 
@@ -112,9 +118,9 @@ if __name__ == "__main__":
     print("Total number of articles: {}".format(len(data["train"])))
 
     # Trim data for faster computations
-    train_data = data["train"][:1000]["text"]
-    val_data = data["train"][1000:1100]["text"]
-    test_data = data["train"][1100:1200]["text"]
+    train_data = data["train"][:100]["text"]
+    val_data = data["train"][100:110]["text"]
+    test_data = data["train"][110:120]["text"]
 
     # Create processed data
     print("Begin preprocessing of data")
