@@ -70,86 +70,8 @@ class TrainModel(object):
         shuffle_dataset = True
         return DataLoader(data, batch_size, shuffle_dataset)
 
-        #
-        # if not custom:
-        #
-        #     train_dataset, eval_dataset = random_split(
-        #         tokenized_datasets["train"],
-        #         [int(dataset_size * (validation_split)), dataset_size - int(dataset_size * (validation_split))],
-        #         generator=torch.Generator().manual_seed(42)
-        #     )
-        #
-        #     return train_dataset, eval_dataset
-        #
-        # else:
-        #     indices = list(range(dataset_size))
-        #     dataset = tokenized_datasets["train"].shuffle(seed=random_seed).select(indices)
-        #
-        #     # Creating data indices for training and validation splits:
-        #
-        #     split = int(np.floor(validation_split * dataset_size))
-        #     np.random.seed(random_seed)
-        #     np.random.shuffle(indices)
-        #
-        #
-        #     train_indices, val_indices = indices[split:], indices[:split]
-        #     return train_indices, val_indices
-        #     '''
-        #     # Creating PT data samplers and loaders:
-        #     train_sampler = SubsetRandomSampler(train_indices)
-        #     valid_sampler = SubsetRandomSampler(val_indices)
-        #
-        #     train_dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
-        #                                                sampler=train_sampler)
-        #     eval_dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
-        #                                                 sampler=valid_sampler)
-        # #features: ['attention_mask', 'input_ids', 'text', 'title', 'token_type_ids']
-        # #print(next(iter(train_dataloader))['title'])
-        #     return train_dataloader, eval_dataloader
-        #     '''
+    def train_custom(self, train = True):
 
-    def train_simpel(self):
-        print('Loading dataset')
-        train_dataloader = self.load_data(path=PROJECT_PATH / "data" / "processed" / "train.pt")
-        val_dataloader = self.load_data(path=PROJECT_PATH / "data" / "processed" / "val.pt")
-        test_dataloader = self.load_data(path=PROJECT_PATH / "data" / "processed" / "test.pt")
-
-        training_args = transformers.TrainingArguments("test_trainer")
-        '''
-        training_args = transformers.TrainingArguments(
-            output_dir="output",
-            evaluation_strategy="steps",
-            eval_steps=500,
-            per_device_train_batch_size=8,
-            per_device_eval_batch_size=8,
-            num_train_epochs=3,
-            save_steps=3000,
-            seed=0,
-            load_best_model_at_end=True,
-        )
-        '''
-        '''
-         do_train=True,
-            num_train_epochs = FLAGS.epochs,
-            learning_rate= FLAGS.lr,
-            logging_dir=logger,
-            output_dir= 'output',
-            load_best_model_at_end=True
-            '''
-
-        trainer = transformers.Trainer(
-            model=self.model,
-            args=training_args,
-            train_dataset=train_dataloader,
-            eval_dataset=val_dataloader
-        )
-
-        # Finetune model
-        trainer.train()
-
-        # accuracy = load_metric('accuracy')
-
-    def train_custom(self):
         train_dataloader = self.load_data(path=PROJECT_PATH / "data" / "processed" / "train.pt")
         val_dataloader = self.load_data(path=PROJECT_PATH / "data" / "processed" / "val.pt")
         test_dataloader = self.load_data(path=PROJECT_PATH / "data" / "processed" / "test.pt")
