@@ -1,5 +1,4 @@
 import torch
-from torch.utils.data import TensorDataset
 from variables import PROJECT_PATH
 from src.models import train_model
 from src.data.load_data import load_dataset
