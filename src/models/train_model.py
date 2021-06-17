@@ -94,8 +94,6 @@ class TrainModel(object):
         model.train()
         for _ in range(num_epochs):
             for X, y in val_dataloader:
-                X = X
-                y = y
                 outputs = model(X)
                 loss = self.criterion(outputs, y)
 
