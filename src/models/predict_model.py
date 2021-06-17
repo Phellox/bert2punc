@@ -5,10 +5,8 @@ import transformers
 from absl import flags
 from datasets import load_metric
 from torch import nn
-from torch.utils.data import DataLoader
 
 # Load data, model, and project path
-from src.data.make_dataset import data
 from src.models.model import BERT_Model
 from variables import PROJECT_PATH
 
