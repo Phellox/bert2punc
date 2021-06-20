@@ -81,7 +81,3 @@ class BERT_Model(pl.LightningModule):
                 'frequency': 1
             }
         }
-
-
-
-

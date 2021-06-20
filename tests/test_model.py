@@ -9,5 +9,5 @@ def test_model_output(i=5):
     with torch.no_grad():
         out = model(data.tensors[0][:i])
         y_pred = torch.argmax(out, dim=-1)
-    assert y_pred.shape == data.tensors[1][:i].shape
     assert type(y_pred) == type(data.tensors[1])
+    assert y_pred.shape == data.tensors[1][:i].shape
