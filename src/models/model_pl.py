@@ -8,13 +8,22 @@ from transformers import BertForMaskedLM
 
 
 class BERT_Model(pl.LightningModule):
-    def __init__(self, segment_size, output_size, dropout):
+    def __init__(self, hparams):
         super().__init__()
+        self.save_hyperparameters()
         self.bert = BertForMaskedLM.from_pretrained('bert-base-uncased')
         self.bert_vocab_size = 30522
-        self.bn = nn.BatchNorm1d(segment_size * self.bert_vocab_size)
-        self.fc = nn.Linear(segment_size * self.bert_vocab_size, output_size)
-        self.dropout = nn.Dropout(dropout)
+        self.bn = nn.BatchNorm1d(hparams.segment_size * self.bert_vocab_size)
+        self.fc = nn.Linear(hparams.segment_size * self.bert_vocab_size, hparams.output_size)
+        self.dropout = nn.Dropout(hparams.dropout)
+
+    @staticmethod
+    def add_model_specific_args(parent_parser):
+        parser = parent_parser.add_argument_group("BERTModel")
+        parser.add_argument('--segment_size', type=int, default=32)
+        parser.add_argument('--output_size', type=int, default=4)
+        parser.add_argument('--dropout', type=float, default=0.3)
+        return parent_parser
 
     def forward(self, x):
         x = self.bert(x)["logits"]

@@ -1,28 +1,40 @@
 import pytorch_lightning as pl
-import torch.cuda
+from argparse import ArgumentParser
 
 from src.data.load_data import load_dataset, create_dataloader
 from src.models.model_pl import BERT_Model
 from variables import PROJECT_PATH
 
 if __name__ == '__main__':
+    # Define parser
+    parser = ArgumentParser()
+
+    # Add PROGRAM level args (None currently)
+    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--shuffle', type=bool, default=True)
+    parser.add_argument('--num_workers', type=int, default=4)
+
+    # Add MODEL specific args
+    parser = BERT_Model.add_model_specific_args(parser)
+
+    # Add TRAINER specific args
+    parser = pl.Trainer.add_argparse_args(parser)
+
+    # Parse args
+    hparams = parser.parse_args()
+
+    # Define trainer
+    trainer = pl.Trainer.from_argparse_args(hparams)
+
+    # Define model
+    model = BERT_Model(hparams)
+
     # Define datasets and data loaders
     train_set = load_dataset("train")
     val_set = load_dataset("val")
+    train_loader = create_dataloader(train_set, hparams.batch_size, hparams.shuffle, hparams.num_workers)
+    val_loader = create_dataloader(val_set, hparams.batch_size, False, hparams.num_workers)
 
-    batch_size = 32
-    num_workers = 4
-
-    train_loader = create_dataloader(train_set, batch_size, True, num_workers)
-    val_loader = create_dataloader(val_set, batch_size, False, num_workers)
-
-    # Define model
-    output_size = 4
-    segment_size = 32
-    dropout = 0.3
-    model = BERT_Model(segment_size, output_size, dropout)
-
-    # Define trainer
-    save_dir = PROJECT_PATH / "models"
-    trainer = pl.Trainer(max_epochs=100, limit_train_batches=0.2, default_root_dir=save_dir)
-    trainer.fit(model, train_dataloader=train_loader, val_dataloaders=val_loader)
+    # save_dir = PROJECT_PATH / "models"
+    # Train model   # TODO: Add early stopping
+    trainer.fit(model, train_loader, val_loader)
