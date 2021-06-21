@@ -21,12 +21,15 @@ class DriftModel(object):
             self.model,
             self.drift_detector)
 
+    def check_drift(self, data):
+        out = self.model(data)
+        self.test_score = self.drift_detector(out)
+        self.test_p_values = self.drift_detector.compute_p_value(out)
+
 if __name__ == "__main__":
     drift_model = DriftModel()
 
     drifted_data = create_dataloader(drift_data(load_dataset('test_data')))
+    drift_model.check_drift(drifted_data)
 
-    outputs = drift_model.model(drifted_data)
-    score = drift_model.drift_detector(outputs)
-    p_val = drift_model.drift_detector.compute_p_value(outputs)
-    print('Score: {:0.2f}, p_val: {:0.2f}'.format(score, p_val))
+    print('Score: {:0.2f}, p_val: {:0.2f}'.format(drift_model.test_score, drift_model.test_p_values))
