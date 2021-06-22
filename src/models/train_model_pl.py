@@ -14,9 +14,9 @@ if __name__ == '__main__':
     parser = ArgumentParser()
 
     # Add PROGRAM level args (None currently)
-    parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--shuffle', type=bool, default=True)
-    parser.add_argument('--num_workers', type=int, default=2)
+    parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--optimise', action='store_true')
     parser.add_argument('--seed', type=int, default=42)
 
@@ -68,18 +68,18 @@ if __name__ == '__main__':
         study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner(
             n_startup_trials=5, n_warmup_steps=20, interval_steps=10)
             )
-        study.optimize(objective, n_trials=10)
+        study.optimize(objective, n_trials=10, gc_after_trial=True)
 
-        fig = plt.figure()
-        fig.add_axes(optuna.visualization.matplotlib.plot_parallel_coordinate(study), label='Parallel coordinate')
-        plt.savefig('Parallel coordinate.png')
-        fig = plt.figure()
-        fig.add_axes(optuna.visualization.matplotlib.plot_optimization_history(study), label='Optimisation history')
-        plt.savefig('Optimisation history.png')
+        # optuna.visualization.matplotlib.plot_parallel_coordinate(study) (Problem with negative values)
+        # plt.savefig('Parallel coordinate.png')
+        optuna.visualization.matplotlib.plot_optimization_history(study)
+        plt.savefig(str(PROJECT_PATH/'reports'/'Optimisation history.png'))
 
         print('Best parameters: ', study.best_params)
-        with open('best_params.yml', 'w') as outfile:
+        with open(str(PROJECT_PATH/'reports'/'best_params.yml'), 'w') as outfile:
             yaml.dump(study.best_params, outfile, default_flow_style=False)
+        
+        study.trials_dataframe().to_csv(str(PROJECT_PATH/'reports'/'study.csv'), index=False)
 
     else:
         # Define trainer
