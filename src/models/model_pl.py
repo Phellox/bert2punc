@@ -11,6 +11,7 @@ class BERT_Model(pl.LightningModule):
     def __init__(self, hparams):
         super().__init__()
         self.save_hyperparameters()
+        self.lr = hparams.lr
         self.bert = BertForMaskedLM.from_pretrained('bert-base-uncased')
         self.bert_vocab_size = 30522
         self.bn = nn.BatchNorm1d(hparams.segment_size * self.bert_vocab_size)
@@ -80,7 +81,7 @@ class BERT_Model(pl.LightningModule):
         return metrics
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=0.001)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
         return {
             'optimizer': optimizer,
             'lr_scheduler': {
@@ -90,7 +91,3 @@ class BERT_Model(pl.LightningModule):
                 'frequency': 1
             }
         }
-
-
-
-
