@@ -19,6 +19,8 @@ if __name__ == '__main__':
 
     # Add TRAINER specific args
     parser = pl.Trainer.add_argparse_args(parser)
+    save_dir = PROJECT_PATH / "models"
+    parser.set_defaults(default_root_dir=str(save_dir))
 
     # Parse args
     hparams = parser.parse_args()
@@ -35,6 +37,5 @@ if __name__ == '__main__':
     train_loader = create_dataloader(train_set, hparams.batch_size, hparams.shuffle, hparams.num_workers)
     val_loader = create_dataloader(val_set, hparams.batch_size, False, hparams.num_workers)
 
-    # save_dir = PROJECT_PATH / "models"
     # Train model   # TODO: Add early stopping
     trainer.fit(model, train_loader, val_loader)
