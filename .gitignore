@@ -94,3 +94,6 @@ target/
 
 *.1
 *.0
+*.yaml
+lightning_logs/version_6/events.out.tfevents.1624354371.MSI.6732.2
+lightning_logs/version_7/events.out.tfevents.1624354455.MSI.6732.3
