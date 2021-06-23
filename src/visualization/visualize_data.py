@@ -5,6 +5,10 @@ from transformers import BertTokenizer
 if __name__ == "__main__":
     # Load data and show raw data example as well as data sizes
     data = load_data()
+    print("TOTAL NUMBER OF ARTICLES:")
+    print(len(data["train"]))
+    print("")
+
     print("NUMBER OF ARTICLES IN EACH DATASET:")
     print("train: 100")
     print("val:    10")
@@ -32,7 +36,7 @@ if __name__ == "__main__":
     train_data_example = reformat_data([train_data_example], include_punctuations)
     print("REFORMATTED TRAIN DATA EXAMPLE:")
     for text in train_data_example:
-        for word_and_punc in text[:15]:
+        for word_and_punc in text[:9]:
             print(word_and_punc)
     print("")
 
@@ -41,10 +45,10 @@ if __name__ == "__main__":
     segment_size = 32
     X, Y = encode_data(train_data_example, tokenizer, punctuation_enc, segment_size)
     print("ENCODED/TOKENIZED TEXT EXCERPT:")
-    print(X[0][:15])
+    print(X[0][:11])
     print("")
     print("LABELS EXCERPT")
-    print(Y[:15])
+    print(Y[:11])
     print("")
 
     # Create segments of text with inserted target
