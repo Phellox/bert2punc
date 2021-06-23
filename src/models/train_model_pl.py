@@ -54,13 +54,15 @@ if __name__ == '__main__':
             # Define model
             model = BERT_Model(hparams)
 
+            for param in model.bert.parameters():
+                param.requires_grad = False
+
             # Define datasets and data loaders
             train_set = load_dataset("train")
             val_set = load_dataset("val")
             train_loader = create_dataloader(train_set, hparams.batch_size, bool(hparams.shuffle), hparams.num_workers)
             val_loader = create_dataloader(val_set, hparams.batch_size, False, hparams.num_workers)
 
-            # Train model   # TODO: Add early stopping
             trainer.fit(model, train_loader, val_loader)
 
             return trainer.callback_metrics["val_acc"].item()
@@ -68,7 +70,7 @@ if __name__ == '__main__':
         study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner(
             n_startup_trials=5, n_warmup_steps=20, interval_steps=10)
             )
-        study.optimize(objective, n_trials=10, gc_after_trial=True)
+        study.optimize(objective, n_trials=50, gc_after_trial=True)
 
         # optuna.visualization.matplotlib.plot_parallel_coordinate(study) (Problem with negative values)
         # plt.savefig('Parallel coordinate.png')
@@ -87,6 +89,9 @@ if __name__ == '__main__':
 
         # Define model
         model = BERT_Model(hparams)
+
+        for param in model.bert.parameters():
+            param.requires_grad = False
 
         # Define datasets and data loaders
         train_set = load_dataset("train")
