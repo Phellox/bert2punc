@@ -34,6 +34,8 @@ class BERT_Model(pl.LightningModule):
         return parent_parser
 
     def forward(self, x):
+        if type(x) == list:
+            x, _ = x
         x = self.bert(x)["logits"]
         x = x.view(x.shape[0], -1)
         x = self.fc(self.bn(x))
