@@ -1,4 +1,5 @@
 import pytorch_lightning as pl
+from pytorch_lightning import loggers as pl_loggers
 import torch.cuda
 from torch.utils.data import TensorDataset, DataLoader
 import torch
@@ -41,6 +42,7 @@ if __name__ == '__main__':
 
     # Define trainer
     save_dir = Path('.') / "models"
-    trainer = pl.Trainer(max_epochs=5, limit_train_batches=10, limit_val_batches= 10, default_root_dir=save_dir, gpus = 1)
+    tb_logger = pl_loggers.TensorBoardLogger('logs/')
+    trainer = pl.Trainer(max_epochs=5, limit_train_batches=10, limit_val_batches= 10, default_root_dir=save_dir, gpus = 1, logger=tb_logger)
     trainer.fit(model, train_dataloader=train_loader, val_dataloaders=val_loader)
     # gpus = 1
