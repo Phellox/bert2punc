@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import pytorch_lightning as pl
-from pytorch_lightning.metrics import functional as FM
 from transformers import BertForMaskedLM
 
 
@@ -12,18 +11,26 @@ class BERT_Model(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.lr = hparams.lr
+        self.output_size = hparams.output_size
+        confusion_matrix = pl.metrics.ConfusionMatrix(hparams.output_size)
+        self.conf_mat_val = confusion_matrix.clone()
+        self.conf_mat_test = confusion_matrix.clone()
         self.bert = BertForMaskedLM.from_pretrained('bert-base-uncased')
         self.bert_vocab_size = 30522
         self.bn = nn.BatchNorm1d(hparams.segment_size * self.bert_vocab_size)
         self.fc = nn.Linear(hparams.segment_size * self.bert_vocab_size, hparams.output_size)
         self.dropout = nn.Dropout(hparams.dropout)
 
+        for param in self.bert.parameters():
+            param.requires_grad = False
+
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = parent_parser.add_argument_group("BERTModel")
         parser.add_argument('--segment_size', type=int, default=32)
-        parser.add_argument('--output_size', type=int, default=4)
+        parser.add_argument('--output_size', type=int, default=3)
         parser.add_argument('--dropout', type=float, default=0.3)
+        parser.add_argument('--lr', type=float, default=0.001)
         return parent_parser
 
     def forward(self, x):
@@ -58,35 +65,48 @@ class BERT_Model(pl.LightningModule):
 
         # Determine accuracy
         pred = torch.max(out, 1)[1]
-        accuracy = FM.accuracy(pred, labels)
 
-        return loss, accuracy
+        return loss, pred, labels
 
     def validation_step(self, batch, batch_idx):
-        loss, accuracy = self.eval_step(batch, batch_idx)
-        metrics = {'val_acc': accuracy, 'val_loss': loss}
+        loss, pred, labels = self.eval_step(batch, batch_idx)
+        self.conf_mat_val(pred, labels)
+        return loss
 
-        # Log loss to TensorBoard
-        self.log_dict(metrics, on_epoch=True)
+    def validation_epoch_end(self, loss):
+        metrics = {"val_loss": torch.tensor(loss).mean()}
 
-        return metrics
+        conf_mat = self.conf_mat_val.compute()
+        metrics["val_acc"] = conf_mat.trace() / conf_mat.sum()
+        for i in range(self.output_size):
+            metric_name = "val_acc_class_{}".format(i)
+            metrics[metric_name] = conf_mat[i, i] / conf_mat[i, :].sum()
+
+        self.log_dict(metrics)
 
     def test_step(self, batch, batch_idx):
-        loss, accuracy = self.eval_step(batch, batch_idx)
-        metrics = {'test_acc': accuracy, 'test_loss': loss}
+        loss, pred, labels = self.eval_step(batch, batch_idx)
+        self.conf_mat_test(pred, labels)
+        return loss
 
-        # Log loss to TensorBoard
-        self.log_dict(metrics, on_epoch=True)
+    def test_epoch_end(self, loss):
+        metrics = {"test_loss": torch.tensor(loss).mean()}
 
-        return metrics
+        conf_mat = self.conf_mat_test.compute()
+        metrics["test_acc"] = conf_mat.trace() / conf_mat.sum()
+        for i in range(self.output_size):
+            metric_name = "test_acc_class_{}".format(i)
+            metrics[metric_name] = conf_mat[i, i] / conf_mat[i, :].sum()
+
+        self.log_dict(metrics)
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
         return {
             'optimizer': optimizer,
             'lr_scheduler': {
-                'scheduler': torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max'),
-                'monitor': 'val_acc',
+                'scheduler': torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=4),
+                'monitor': 'val_loss',
                 'interval': 'epoch',
                 'frequency': 1
             }

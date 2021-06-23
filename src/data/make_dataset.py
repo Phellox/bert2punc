@@ -94,9 +94,9 @@ if __name__ == "__main__":
 
     # Encode punctuations of interest
     punctuation_enc = {
-        ' ': 1,
-        '.': 2,
-        ',': 3
+        ' ': 0,
+        '.': 1,
+        ',': 2
     }
 
     # Define tokenizer for bert-base-uncased and segment size for each observation
