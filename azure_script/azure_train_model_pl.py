@@ -9,9 +9,7 @@ from argparse import ArgumentParser
 import matplotlib.pyplot as plt
 import yaml
 
-#from src.data.load_data import load_dataset, create_dataloader
 from src.models.model_pl import BERT_Model
-#from variables import PROJECT_PATH
 
 def load_dataset(set_type: str = "train", dir_path= Path('.').parent / 'data' / "processed"):
     set_type = set_type if set_type.endswith(".pt") else set_type + ".pt"
@@ -51,7 +49,6 @@ if __name__ == '__main__':
 
     # Set rng seed
     pl.utilities.seed.seed_everything(seed=hparams.seed, workers=False)
-
     if hparams.optimise:
         def objective(trial) -> float:
 
@@ -64,7 +61,7 @@ if __name__ == '__main__':
             trainer = pl.Trainer.from_argparse_args(hparams,
              checkpoint_callback=False,
              callbacks=[PyTorchLightningPruningCallback(trial, monitor="val_acc")],
-             weights_summary=None)
+             weights_summary=None, gpus = hparams.gpus)
 
             hyperparameters = dict(lr=hparams.lr, dropout=hparams.dropout)
             trainer.logger.log_hyperparams(hyperparameters)
@@ -103,13 +100,11 @@ if __name__ == '__main__':
 
     else:
         # Define trainer
-        trainer = pl.Trainer.from_argparse_args(hparams)
+        tb_logger = pl_loggers.TensorBoardLogger('logs/') #create log
+        trainer = pl.Trainer.from_argparse_args(hparams, gpus = hparams.gpus, , logger=tb_logger)
 
         # Define model
         model = BERT_Model(hparams)
-
-        for param in model.bert.parameters():
-            param.requires_grad = False
 
         # Define datasets and data loaders
         train_set = load_dataset("train")
@@ -117,5 +112,5 @@ if __name__ == '__main__':
         train_loader = create_dataloader(train_set, hparams.batch_size, hparams.shuffle, hparams.num_workers)
         val_loader = create_dataloader(val_set, hparams.batch_size, False, hparams.num_workers)
 
-        # Train model   # TODO: Add early stopping
+        # Train model 
         trainer.fit(model, train_loader, val_loader)
