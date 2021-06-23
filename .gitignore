@@ -78,6 +78,9 @@ target/
 # exclude data from source control by default
 /data/
 
+# exclude models from source control by default
+/models/
+
 # Mac OS-specific storage files
 .DS_Store
 
@@ -91,42 +94,3 @@ target/
 # Word stuff
 *.tmp
 *.docx
-
-*.1
-*.0
-*.yaml
-*.2
-*.3
-*.5
-*.5
-*.8
-*.9
-*.6
-*.7
-*.11
-*.12
-*.4
-*.4
-*.10
-*.10
-*.14
-*.14
-*.15
-*.17
-*.13
-*.16
-*.18
-*.21
-*.22
-*.23
-*.20
-*.20
-*.24
-*.24
-*.25
-*.28
-*.19
-*.29
-*.26
-*.30
-*.27

@@ -15,16 +15,6 @@ def load_data(path=str(PROJECT_PATH / "data" / "raw")):
     return datasets.load_from_disk(path)
 
 
-def tokenize_function(datapoint):
-    return tokenizer(datapoint["text"], padding="max_length", truncation=True)
-
-
-def load_file(filename):
-    with open(filename, 'r', encoding='utf-8') as f:
-        data = f.readlines()
-    return data
-
-
 def encode_data(data, tokenizer, punctuation_enc, segment_size):
     """
     Converts words to (BERT) tokens and punctuation to given encoding.
@@ -104,9 +94,9 @@ if __name__ == "__main__":
 
     # Encode punctuations of interest
     punctuation_enc = {
-        ' ': 1,
-        '.': 2,
-        ',': 3
+        ' ': 0,
+        '.': 1,
+        ',': 2
     }
 
     # Define tokenizer for bert-base-uncased and segment size for each observation
