@@ -1,0 +1,19 @@
+channels:
+- conda-forge
+dependencies:
+- scikit-learn
+- python=3.8.0
+- pip:
+  - azureml-defaults
+  - -e git+https://github.com/Phellox/bert2punc@main#egg=src 
+  - torch==1.6.0
+  - pytorch-lightning==1.3.5
+  - transformers==4.6.1
+  - matplotlib==3.3.4
+  - future==0.17.1
+  - pillow
+  - absl-py==0.12.0
+  - datasets==1.8.0
+  - optuna==2.8.0
+  - PyYAML==5.4.1
+
