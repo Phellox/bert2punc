@@ -101,7 +101,7 @@ if __name__ == '__main__':
     else:
         # Define trainer
         tb_logger = pl_loggers.TensorBoardLogger('logs/') #create log
-        trainer = pl.Trainer.from_argparse_args(hparams, gpus = hparams.gpus, , logger=tb_logger)
+        trainer = pl.Trainer.from_argparse_args(hparams, gpus = hparams.gpus, logger=tb_logger)
 
         # Define model
         model = BERT_Model(hparams)
