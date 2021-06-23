@@ -8,22 +8,8 @@ import matplotlib.pyplot as plt
 import yaml
 
 from src.models.model_pl import BERT_Model
+from src.data.load_data import load_dataset, create_dataloader
 from variables import PROJECT_PATH
-
-def load_dataset(set_type: str = "train", dir_path=PROJECT_PATH / "data" / "processed"):
-    set_type = set_type if set_type.endswith(".pt") else set_type + ".pt"
-    path = dir_path / set_type
-    if path.exists():
-        X, y = torch.load(path)
-        data = TensorDataset(X, y)
-    else:
-        raise ValueError("The path: {}, did not lead to a proper .pt file.".format(path))
-
-    return data
-
-
-def create_dataloader(dataset, batch_size=32, shuffle=True, num_workers=0):
-    return DataLoader(dataset, batch_size, shuffle=shuffle, num_workers=num_workers)
 
 
 if __name__ == '__main__':
@@ -71,9 +57,6 @@ if __name__ == '__main__':
             # Define model
             model = BERT_Model(hparams)
 
-            for param in model.bert.parameters():
-                param.requires_grad = False
-
             # Define datasets and data loaders
             train_set = load_dataset("train")
             val_set = load_dataset("val")
@@ -106,9 +89,6 @@ if __name__ == '__main__':
 
         # Define model
         model = BERT_Model(hparams)
-
-        for param in model.bert.parameters():
-            param.requires_grad = False
 
         # Define datasets and data loaders
         train_set = load_dataset("train")
