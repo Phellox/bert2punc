@@ -29,8 +29,8 @@ class BERT_Model(pl.LightningModule):
         parser = parent_parser.add_argument_group("BERTModel")
         parser.add_argument('--segment_size', type=int, default=32)
         parser.add_argument('--output_size', type=int, default=3)
-        parser.add_argument('--dropout', type=float, default=0.3)
-        parser.add_argument('--lr', type=float, default=0.001)
+        parser.add_argument('--dropout', type=float, default=0.398)
+        parser.add_argument('--lr', type=float, default=0.0029)
         return parent_parser
 
     def forward(self, x):
