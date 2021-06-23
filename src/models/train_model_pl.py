@@ -47,9 +47,9 @@ if __name__ == '__main__':
 
             # Define trainer
             trainer = pl.Trainer.from_argparse_args(hparams,
-             checkpoint_callback=False,
-             callbacks=[PyTorchLightningPruningCallback(trial, monitor="val_acc")],
-             weights_summary=None)
+                                                    checkpoint_callback=False,
+                                                    callbacks=[PyTorchLightningPruningCallback(trial, monitor="val_acc")],
+                                                    weights_summary=None)
 
             hyperparameters = dict(lr=hparams.lr, dropout=hparams.dropout)
             trainer.logger.log_hyperparams(hyperparameters)
