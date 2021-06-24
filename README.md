@@ -46,7 +46,7 @@ Project Organization
     │   ├── __init__.py    		<- Makes src a Python module
     │   │
     │   ├── data           		<- Scripts to download or generate data
-    │   │   ├── make_dataset.py			<- Used for downloading and processing data
+    │   │   ├── make_dataset.py		<- Used for downloading and processing data
 	│   │   └── load_data.py		<- Used to load datasets for training, testing, etc.
     │   │
     │   ├── models         		<- Scripts to train models and then use trained models to make predictions
@@ -57,7 +57,7 @@ Project Organization
     │   │   ├── evaluate_model.py		<- Loads and evaluates a model on the test set (unfinished)
 	│   │   ├── evaluate_model_pl.py	<- Loads and evaluates a pytorch-lightning model on the test set
     │   │   │                                  
-    │   │   ├── train_model.py			<- Training script using native pytorch (unfinished)
+    │   │   ├── train_model.py		<- Training script using native pytorch (unfinished)
 	│   │   └── train_model_pl.py		<- Training script using pytorch-lightning
     │   │
     │   └── visualization  		<- Scripts to create exploratory and results oriented visualizations
