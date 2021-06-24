@@ -21,36 +21,36 @@ Project Organization
 ------------
 
     ├── LICENSE
-    ├── README.md          <- The top-level README for developers using this project.
+    ├── README.md                           <- The top-level README for developers using this project.
     ├── azure_script
     │   ├── Run Bert2Punc in Azure.ipynb    <- Script with guide to train the model in Azure
     │   ├── azure_train_model_pl.py     	<- Training script changed to fit Azure
     │   └── conda_dependencies.yml      	<- Dependencies needed to create environment in Azure
     │
     ├── data
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
+    │   ├── processed                       <- The final, canonical data sets for modeling.
+    │   └── raw                             <- The original, immutable data dump.
     │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
+    ├── docs                                <- A default Sphinx project; see sphinx-doc.org for details
     │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
+    ├── models                              <- Trained and serialized models, model predictions, or model summaries
     │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
+    ├── reports                             <- Generated analysis as HTML, PDF, LaTeX, etc.
+    │   └── figures                         <- Generated graphics and figures to be used in reporting
     │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with the pipreqs package
+    ├── requirements.txt                    <- The requirements file for reproducing the analysis environment, e.g.
+    │                                           generated with the pipreqs package
     │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
+    ├── setup.py                            <- makes project pip installable (pip install -e .) so src can be imported
+    ├── src                                 <- Source code for use in this project.
+    │   ├── __init__.py                     <- Makes src a Python module
     │   │
-    │   ├── data           <- Scripts to download or generate data
+    │   ├── data                            <- Scripts to download or generate data
     │   │   ├── make_dataset.py				<- Used for downloading and processing data
 	│   │   └── load_data.py				<- Used to load datasets for training, testing, etc.
     │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
+    │   ├── models                          <- Scripts to train models and then use trained models to make
+    │   │   │                                   predictions
 	│   │   ├── drift.py					<- Script for testing data drift
     │   │   ├── model.py					<- Definition of the transformers/pytorch model
 	│   │   ├── model_pl.py					<- Definition of the transformers/pytorch-lightning model
@@ -63,7 +63,7 @@ Project Organization
     │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
     │       └── visualize_data.py			<- Prints information about data and shows example
     │
-    └── tests              <- Testing scripts to be used with pytest (currently does not support PL)
+    └── tests                               <- Testing scripts to be used with pytest (currently does not support PL)
 
 
 --------
